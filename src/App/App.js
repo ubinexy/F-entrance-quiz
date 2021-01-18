@@ -10,14 +10,15 @@ class App extends Component {
     super();
     this.state = {
       data: [],
+      data2: [],
     };
   }
 
   componentDidMount() {
-    this.fetchData();
+    this.fetchStudentsData();
   }
 
-  fetchData = () => {
+  fetchStudentsData = () => {
     axios
       .get('http://localhost:8080/students')
       .then((res) => this.setState({ data: res.data }))
@@ -26,20 +27,36 @@ class App extends Component {
       });
   };
 
-  keyPress = (e) => {
-    if (e.keyCode === 13) {
-      console.log(e.target.value);
-      const name = e.target.value;
-      e.target.value = '';
-      axios
-        .post(`http://localhost:8080/student?name=${  name}`)
-        .then(() => {
-          this.fetchData();
-        })
-        .catch((err) => {
-          console.log('err:', err);
+  addStudent = (name) => {
+    axios
+      .post(`http://localhost:8080/student?name=${name}`)
+      .then(() => {
+        this.fetchStudentsData();
+      })
+      .catch((err) => {
+        console.log('err:', err);
+      });
+  };
+
+  fetchPartitionData = () => {
+    axios
+      .get(`http://localhost:8080/partition`)
+      .then((res) => {
+        console.log(res.data);
+        for (let i = 0; i < res.data.length; i += 1) {
+          for (let j = 0; j < res.data[i].member.length; j += 1) {
+            console.log(res.data[i].member[j]);
+            res.data[i].member[j] =
+              `${res.data[i].member[j]  } ${  this.state.data[res.data[i].member[j] - 1].name}`;
+          }
+        }
+        this.setState({
+          data2: res.data,
         });
-    }
+      })
+      .catch((err) => {
+        console.log('err:', err);
+      });
   };
 
   render() {
@@ -48,15 +65,23 @@ class App extends Component {
         <section>
           <div className="section-header">
             <h3>分组列表</h3>
-            <span className="group-button">分组学员</span>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-hidden="true"
+              className="group-button"
+              onClick={() => this.fetchPartitionData()}
+            >
+              分组学员
+            </div>
           </div>
-          <Teams />
+          <Teams data={this.state.data2} />
         </section>
         <section>
           <div className="section-header">
             <h3>学员列表</h3>
           </div>
-          <Students data={this.state.data} keyPress={this.keyPress} />
+          <Students data={this.state.data} addStudent={this.addStudent} />
         </section>
       </div>
     );
